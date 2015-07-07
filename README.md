@@ -26,7 +26,7 @@ Watch a local project directory and sync it on the fly on a certain device.
 Example:
 
 ```sh
-$ cd my/project
+$ cd my/project/src
 $ resin watch 768fdc5d6d687dac5ee45b64ffe939779a38a3958f686efc4f0339bce60906
 ```
 
