@@ -3,7 +3,7 @@ resin-plugin-watch
 
 [![dependencies](https://david-dm.org/resin-io/resin-plugin-watch.png)](https://david-dm.org/resin-io/resin-plugin-watch.png)
 
-Write a Resin.io image to a device.
+Watch a local project directory and sync it on the fly on a certain device.
 
 **NOTICE:** This is highly experimental and not stable. It relies on hacky workarounds to do it's job and therefore should be used carefully.
 
