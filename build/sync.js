@@ -22,35 +22,28 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
  */
-var DESTINATION_PATH, PORT, Promise, USERNAME, child_process, path, rsync, _;
+var PASSWORD, Promise, USERNAME, os, rsync, _;
 
 _ = require('lodash');
 
-path = require('path');
-
 Promise = require('bluebird');
-
-child_process = Promise.promisifyAll(require('child_process'));
 
 rsync = require('rsync');
 
+os = require('os');
+
 USERNAME = 'resinwatch';
 
-DESTINATION_PATH = '/data/.resin-watch';
-
-PORT = '5511';
+PASSWORD = 'watch';
 
 exports.buildCommand = function(ip, options) {
-  var command;
   if (options == null) {
     options = {};
   }
   _.defaults(options, {
-    destination: "" + USERNAME + "@" + ip + ":" + DESTINATION_PATH
+    destination: "" + USERNAME + "@" + ip + "::sync"
   });
-  command = Promise.promisifyAll(rsync.build(options));
-  command.set('password-file', path.join(__dirname, 'password.txt'));
-  return command;
+  return Promise.promisifyAll(rsync.build(options));
 };
 
 exports.execute = function(ip, options) {
@@ -58,14 +51,23 @@ exports.execute = function(ip, options) {
   if (options == null) {
     options = {};
   }
+  process.env['RSYNC_PASSWORD'] = PASSWORD;
   command = exports.buildCommand(ip, options);
   return command.executeAsync();
 };
 
 exports.perform = function(ip, directory) {
+  if (os.platform() === 'win32') {
+    if (_.last(directory) !== '\\') {
+      directory += '\\';
+    }
+  } else {
+    if (_.last(directory) !== '/') {
+      directory += '/';
+    }
+  }
   return exports.execute(ip, {
     source: directory,
-    flags: 'avzr',
-    shell: "ssh -p " + PORT
+    flags: 'avr'
   });
 };

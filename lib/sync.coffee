@@ -23,33 +23,34 @@ THE SOFTWARE.
 ###
 
 _ = require('lodash')
-path = require('path')
 Promise = require('bluebird')
-child_process = Promise.promisifyAll(require('child_process'))
 rsync = require('rsync')
+os = require('os')
 
 USERNAME = 'resinwatch'
-DESTINATION_PATH = '/data/.resin-watch'
-PORT = '5511'
+PASSWORD = 'watch'
 
 exports.buildCommand = (ip, options = {}) ->
 	_.defaults options,
-		destination: "#{USERNAME}@#{ip}:#{DESTINATION_PATH}"
+		destination: "#{USERNAME}@#{ip}::sync"
 
-	command = Promise.promisifyAll(rsync.build(options))
-	command.set('password-file', path.join(__dirname, 'password.txt'))
-	return command
+	return Promise.promisifyAll(rsync.build(options))
 
 exports.execute = (ip, options = {}) ->
-
-	# Remove device from known_hosts since the device host key
-	# changes each time the container is restarted.
-	# child_process.execAsync "ssh-keygen -R #{ip}:#{PORT}", ->
-
+	process.env['RSYNC_PASSWORD'] = PASSWORD
 	command = exports.buildCommand(ip, options)
 	return command.executeAsync()
 
 exports.perform = (ip, directory) ->
+
+	# If the directory is missing the trailing slash/back-slash
+	# syncinc doesn't work. Probably an issue in how rsync
+	# concatenates the files with the root directory.
+	if os.platform() is 'win32'
+		directory += '\\' if _.last(directory) isnt '\\'
+	else
+		directory += '/' if _.last(directory) isnt '/'
+
 	exports.execute ip,
 		source: directory
 
@@ -58,9 +59,5 @@ exports.perform = (ip, directory) ->
 		# files, and not just copies them blindly.
 		#
 		# v = verbose
-		# z = compress during transfer
 		# r = recursive
-		flags: 'avzr'
-
-		# http://mike-hostetler.com/blog/2007/12/08/rsync-non-standard-ssh-port/
-		shell: "ssh -p #{PORT}"
+		flags: 'avr'
